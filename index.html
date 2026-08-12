@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casework — Situation Handling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b1e23;
+    --ink-soft:#2a2e35;
+    --parchment:#f1ece1;
+    --parchment-dim:#e7e0d2;
+    --brass:#b08d57;
+    --brass-bright:#c9a56c;
+    --teal:#3f6659;
+    --rule:#3a3f47;
+    --danger:#a85c4a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--parchment);
+    font-family:'IBM Plex Sans',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:48px 24px 80px;
+  }
+  .masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:1px solid var(--rule);
+    padding-bottom:18px;
+    margin-bottom:40px;
+  }
+  .masthead h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:26px;
+    letter-spacing:0.01em;
+    margin:0;
+  }
+  .masthead .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--brass-bright);
+  }
+  button{
+    font-family:'IBM Plex Sans',sans-serif;
+    cursor:pointer;
+  }
+  .btn{
+    background:var(--brass);
+    color:var(--ink);
+    border:none;
+    padding:12px 22px;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    border-radius:2px;
+    transition:background 0.15s ease, transform 0.1s ease;
+  }
+  .btn:hover:not(:disabled){background:var(--brass-bright);}
+  .btn:active:not(:disabled){transform:translateY(1px);}
+  .btn:disabled{background:#4a4f57;color:#8b8f96;cursor:not-allowed;}
+  .btn-ghost{
+    background:transparent;
+    color:var(--parchment);
+    border:1px solid var(--rule);
+    padding:11px 20px;
+    font-size:13px;
+    border-radius:2px;
+  }
+  .btn-ghost:hover{border-color:var(--brass);color:var(--brass-bright);}
+
+  /* ---- Home ---- */
+  .home-actions{display:flex;gap:12px;margin-bottom:44px;flex-wrap:wrap;}
+  .section-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:#8b8f96;
+    margin:0 0 14px;
+  }
+  .case-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px;}
+  .case-item{
+    background:var(--ink-soft);
+    border-left:3px solid var(--rule);
+    padding:16px 18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    transition:border-color 0.15s ease, background 0.15s ease;
+  }
+  .case-item:hover{border-left-color:var(--brass);background:#31363f;}
+  .case-item .title{font-size:15px;font-weight:500;}
+  .case-item .meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b8f96;margin-top:4px;}
+  .empty-state{
+    color:#8b8f96;
+    font-size:14px;
+    padding:32px 0;
+    border-top:1px solid var(--rule);
+  }
+
+  /* ---- Interview ---- */
+  .progress-track{
+    display:flex;
+    gap:5px;
+    margin-bottom:36px;
+  }
+  .progress-seg{
+    flex:1;
+    height:3px;
+    background:var(--rule);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .progress-seg.done{background:var(--brass);}
+  .progress-seg.current{background:linear-gradient(90deg, var(--brass) 50%, var(--rule) 50%);background-size:200% 100%;animation:none;}
+
+  .step-eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--brass-bright);
+    margin-bottom:10px;
+  }
+  .step-title{
+    font-family:'Fraunces',serif;
+    font-size:28px;
+    font-weight:500;
+    line-height:1.28;
+    margin:0 0 32px;
+    max-width:600px;
+  }
+  textarea{
+    width:100%;
+    min-height:180px;
+    background:var(--ink-soft);
+    border:1px solid var(--rule);
+    color:var(--parchment);
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    padding:18px;
+    border-radius:2px;
+    resize:vertical;
+    outline:none;
+    transition:border-color 0.15s ease;
+  }
+  textarea:focus{border-color:var(--brass);}
+  textarea::placeholder{color:#63676f;}
+  .interview-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:22px;
+  }
+  .hint{font-size:12px;color:#63676f;}
+
+  /* ---- Analyzing ---- */
+  .analyzing{
+    text-align:center;
+    padding:100px 0;
+  }
+  .analyzing .step-eyebrow{margin-bottom:16px;}
+  .spinner{
+    width:28px;height:28px;
+    border:2px solid var(--rule);
+    border-top-color:var(--brass);
+    border-radius:50%;
+    margin:0 auto 24px;
+    animation:spin 0.9s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---- Report ---- */
+  .report-head{margin-bottom:36px;}
+  .report-title{
+    font-family:'Fraunces',serif;
+    font-size:30px;
+    font-weight:500;
+    margin:0 0 8px;
+  }
+  .report-date{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8b8f96;}
+  .report-section{
+    border-top:1px solid var(--rule);
+    padding:26px 0;
+  }
+  .report-section:last-of-type{border-bottom:1px solid var(--rule);}
+  .report-section h3{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--brass-bright);
+    margin:0 0 12px;
+  }
+  .report-section p{
+    font-size:15.5px;
+    line-height:1.72;
+    margin:0 0 12px;
+    color:#e9e4d8;
+  }
+  .report-section p:last-child{margin-bottom:0;}
+  .synthesis-block{
+    background:var(--ink-soft);
+    border-left:3px solid var(--brass);
+    padding:26px 28px;
+    margin-bottom:8px;
+  }
+  .synthesis-block h3{
+    font-family:'Fraunces',serif;
+    font-size:19px;
+    font-weight:500;
+    color:var(--parchment);
+    margin:0 0 14px;
+  }
+  .synthesis-block p{
+    font-size:16px;
+    line-height:1.75;
+    margin:0 0 14px;
+    color:#f1ece1;
+  }
+  .synthesis-block p:last-child{margin-bottom:0;}
+  .report-actions{
+    display:flex;
+    gap:12px;
+    margin-top:36px;
+    flex-wrap:wrap;
+  }
+  .error-box{
+    background:rgba(168,92,74,0.12);
+    border:1px solid var(--danger);
+    color:#e3b8ac;
+    padding:16px 18px;
+    border-radius:2px;
+    font-size:14px;
+    margin-top:20px;
+    line-height:1.55;
+  }
+  .raw-answers{margin-top:44px;}
+  .raw-answers summary{
+    cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:#8b8f96;
+    padding:8px 0;
+  }
+  .raw-item{padding:14px 0;border-top:1px solid var(--rule);}
+  .raw-item .q{font-size:12px;color:var(--brass-bright);margin-bottom:6px;}
+  .raw-item .a{font-size:14px;line-height:1.6;color:#c9c4b8;white-space:pre-wrap;}
+
+  a.back-link{
+    color:#8b8f96;
+    font-size:13px;
+    text-decoration:none;
+    display:inline-block;
+    margin-bottom:28px;
+  }
+  a.back-link:hover{color:var(--brass-bright);}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+// ⚠️ CONFIG — after deploying the Cloudflare Worker (see setup steps),
+// replace the placeholder below with your actual Worker URL, e.g.
+// "https://casework-proxy.yourname.workers.dev"
+const API_PROXY_URL = "https://REPLACE-WITH-YOUR-WORKER-URL.workers.dev";
+
+const STEPS = [
+  { key:'product',  q:'Work out exactly what the (person, unit, activity) should be producing.' },
+  { key:'ideal',    q:'Work out the ideal scene.' },
+  { key:'existing', q:'Investigate the existing scene.' },
+  { key:'outpoints',q:'Follow outpoints back from ideal to existing.' },
+  { key:'why',      q:'Locate the real Why that will move the existing toward ideal.' },
+  { key:'resources',q:'Look over existing resources.' },
+  { key:'brightidea',q:'Get a bright idea of how to handle.' },
+  { key:'handling', q:'Handle or recommend handling so that it stays handled.' }
+];
+
+const REPORT_SECTIONS = [
+  { title:'The Product', instruction:'What the user is to be producing, and why what they are to be producing is a valid product (finished, valuable, and exchangeable).' },
+  { title:'The Ideal Scene', instruction:'What the ideal scene is composed of, and the conditions and environment it is created under and within.' },
+  { title:'The Existing Scene', instruction:'The current state of production and the related experience(s) of being in that state.' },
+  { title:'Outpoints', instruction:'Elements revealed/noted as a consequence of contrasting the existing scene with the ideal scene.' },
+  { title:'The Why', instruction:'The realization of what is causing the existing scene to be a departure from the ideal — the real cause of the situation.' },
+  { title:'Resources', instruction:"The elements at the user's disposal which can contribute to the movement from the existing scene toward or even to the realization of the ideal scene." },
+  { title:'The Bright Idea', instruction:'State and describe the bright idea(s) which deploy(s) the resources which influence the movement from the existing scene to the ideal scene.' },
+  { title:'The Handling', instruction:'The Who, What, When, Where, How and Why involved with the execution of the bright idea(s). Note that results should be reported periodically to verify the progression of movement from the existing scene to the ideal scene — this cannot be verified at the moment of writing.' }
+];
+
+const SYNTHESIS_INSTRUCTION = 'A narrative synthesis that makes it clear and obvious what has changed now that the Existing Scene and Ideal Scene are known, along with the outpoints that differentiate them, the resources available to remedy the points of departure between Existing and Ideal, the bright idea(s) and handling that can be executed from those resources, and the potential for maintaining — and even expanding the scope and quality of — the Ideal Scene.';
+
+const GROUND_RULES = `Ground rules, established and fixed by the person who owns this method — follow them exactly:
+- The Why is whatever caused the situation to begin — it can be a presence (a belief, identification, action) or an absence (missing awareness, missing ideal scene, missing context). It is almost never already consciously known to the person before doing this work.
+- Outpoints are extensions of the Why — they grow out of it — but they do not need to be logically checked against the Why, and a mismatch is not a flaw to flag. Do not perform or mention any consistency check between steps.
+- A resource has potential to move the existing scene toward the ideal when recognized; that potential becomes actual only through congruent application.
+- The bright idea must engage the Why, not bypass it to merely patch symptoms.
+- The handling may be applied directly or recommended/handed off to whoever (person, unit, or activity) should implement it. Success is defined as no recurrence of the situation — but that can only be confirmed later, over time. Never claim or imply the situation is already resolved.
+- Do not evaluate, grade, or critique the user's answers. Do not point out gaps, inconsistencies, or missing logic between steps. Your only job is to synthesize what the user wrote into clear, well-written narrative prose, using their own words and ideas — introduce no new claims, theories, or judgments beyond what they wrote.
+- Plain language. No padding, no therapy-speak, no filler phrases.`;
+
+function buildAnswersBlock(){
+  return STEPS.map((s,i)=> `Step ${i+1} — ${s.q}\nUser's answer: ${state.answers[i]}`).join('\n\n');
+}
+
+// ---------- Storage helpers ----------
+async function listRuns(){
+  try{
+    const res = await window.storage.list('run:', false);
+    if(!res || !res.keys) return [];
+    const runs = [];
+    for(const k of res.keys){
+      try{
+        const r = await window.storage.get(k, false);
+        if(r && r.value) runs.push(JSON.parse(r.value));
+      }catch(e){}
+    }
+    runs.sort((a,b)=> b.createdAt - a.createdAt);
+    return runs;
+  }catch(e){ return []; }
+}
+async function saveRun(run){
+  try{
+    await window.storage.set('run:'+run.id, JSON.stringify(run), false);
+  }catch(e){ console.error('save failed', e); }
+}
+
+// ---------- App state ----------
+let state = { view:'home', runs:[], current:null, stepIndex:0, answers:[], error:null, progressLabel:'' };
+
+async function init(){
+  state.runs = await listRuns();
+  render();
+}
+
+function newRun(){
+  state.view = 'interview';
+  state.stepIndex = 0;
+  state.answers = STEPS.map(()=> '');
+  state.current = null;
+  state.error = null;
+  render();
+}
+
+function viewRun(run){
+  state.view = 'report';
+  state.current = run;
+  render();
+}
+
+function goHome(){
+  state.view = 'home';
+  render();
+}
+
+async function submitStep(text){
+  state.answers[state.stepIndex] = text;
+  if(state.stepIndex < STEPS.length - 1){
+    state.stepIndex += 1;
+    render();
+  } else {
+    await runAnalysis();
+  }
+}
+
+async function callOneSection(title, instruction, extraContext, primaryStepIndex){
+  const primaryLine = (primaryStepIndex != null)
+    ? `\n\nYour primary source is the person's answer to Step ${primaryStepIndex+1} ("${STEPS[primaryStepIndex].q}") in the full answer set below. Every other step is shown only for background orientation — do not pull specific facts, adjectives, or descriptive words from any step other than Step ${primaryStepIndex+1} into this section. Example of what NOT to do: if Step 4 uses the word "stressed" but Step 3 does not, the Existing Scene section must not use the word "stressed" — even though it's visible in the answer set below, it belongs to a different step's answer.`
+    : '';
+
+  const system = `You are writing ONE section of a narrative case report from a user's own answers to an 8-step situation-handling process.
+
+${GROUND_RULES}
+
+THE RULE ABOVE ABOUT INTRODUCING NO NEW CLAIMS OUTRANKS EVERYTHING BELOW THIS LINE. If the two conflict, the rule above wins.
+
+Write ONLY the section titled "${title}". Its ordinary required content is: ${instruction}
+
+Before writing, silently work through two steps:
+STEP A — List only the specific things the person's raw answers actually state or directly, necessarily imply. Nothing else.
+STEP B — Write the section's prose using ONLY items from that list. If the list is thin, the section must be thin. Do not add detail, mechanism, justification, or examples the person did not give you, even where the required content above asks for something (e.g. "why it is exchangeable," "the conditions it exists under") that the list doesn't support. In that case, either state only the part the list does support, or state plainly and briefly that the raw answer doesn't specify that part — never invent the missing part to make the section sound complete. It is correct and expected for a section to be short, or to leave part of its required content unaddressed, when the person's answer doesn't supply it.
+
+Do not pull specific content that belongs to a different step's answer into this section, even if it would make the section read more fully — stay inside this section's own raw answer.${primaryLine}
+
+Do not add general principles, aphorisms, or characterizations that are not directly tied to what the person specifically wrote — even ones that sound reasonable, true in general, or like natural connective tissue. Examples of what NOT to do: writing "what is treated as real becomes real in its effects" (a freestanding general principle, not something the person said) or "capable of being directed" (a general characterization of a category, not a restatement of their specific words) or "this pattern is not occasional or incidental" (a generalization about the pattern rather than the pattern itself). Every sentence must trace to something the person specifically wrote, not to a generally true-sounding statement the model supplies around it.
+
+Write in natural, flowing prose with real transitions between ideas, as if explaining this directly to the person — not a clipped restatement of their own words. This is about delivery only: it must not add any claim, detail, specific, or general principle the grounding rule above wouldn't already allow.
+
+Output ONLY the plain prose for this section — no title, no headers, no markdown, no preamble, no JSON, no visible trace of Step A. One tight paragraph, occasionally two if the material genuinely requires it and the person's answer actually supports that much. Separate paragraphs with a blank line if you use more than one.`;
+
+  const userContent = buildAnswersBlock() + (extraContext ? '\n\n' + extraContext : '');
+
+  const response = await fetch(API_PROXY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      system: system,
+      messages: [{ role:"user", content: userContent }]
+    })
+  });
+  if(!response.ok){
+    const errText = await response.text().catch(()=> '');
+    throw new Error('API returned ' + response.status + (errText ? ': ' + errText.slice(0,200) : ''));
+  }
+  const data = await response.json();
+  const textBlock = (data.content || []).find(b => b.type === 'text');
+  if(!textBlock) throw new Error('No text returned for "' + title + '"');
+  return textBlock.text.trim();
+}
+
+async function runAnalysis(){
+  state.view = 'analyzing';
+  state.error = null;
+  render();
+
+  try{
+    const sections = [];
+    for(let i=0; i<REPORT_SECTIONS.length; i++){
+      const r = REPORT_SECTIONS[i];
+      state.progressLabel = 'Section ' + (i+1) + ' of 9 — ' + r.title;
+      render();
+      const body = await callOneSection(r.title, r.instruction, null, i);
+      sections.push({ title: r.title, body });
+    }
+
+    state.progressLabel = 'Section 9 of 9 — Synthesis';
+    render();
+    const sectionsRecap = 'The 8 report sections already written, for reference:\n\n' +
+      sections.map((s,i)=> (i+1) + '. ' + s.title + '\n' + s.body).join('\n\n');
+    const synthesisBody = await callOneSection(
+      'Synthesis',
+      SYNTHESIS_INSTRUCTION + ' This can run 2-4 paragraphs since it is the lead, integrative element of the report.',
+      sectionsRecap
+    );
+
+    const run = {
+      id: 'r' + Date.now(),
+      createdAt: Date.now(),
+      title: deriveTitle(state.answers[0]),
+      answers: STEPS.map((s,i)=> ({ q: s.q, a: state.answers[i] })),
+      synthesis: { title:'Synthesis', body: synthesisBody },
+      sections: sections
+    };
+    await saveRun(run);
+    state.runs = await listRuns();
+    state.current = run;
+    state.view = 'report';
+    render();
+  } catch(e){
+    console.error(e);
+    state.error = 'The analysis could not be generated (' + (e.message || 'unknown error') + '). Your answers have not been lost — you can try again.';
+    state.view = 'analysisError';
+    render();
+  }
+}
+
+function deriveTitle(firstAnswer){
+  const clean = (firstAnswer || '').trim().replace(/\s+/g,' ');
+  if(!clean) return 'Untitled situation';
+  return clean.length > 48 ? clean.slice(0,48) + '…' : clean;
+}
+
+function formatDate(ts){
+  return new Date(ts).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+}
+
+function exportMarkdown(run){
+  let md = `# ${run.title}\n\n*${formatDate(run.createdAt)}*\n\n`;
+  if(run.synthesis){
+    md += `## ${run.synthesis.title}\n\n${run.synthesis.body}\n\n---\n\n`;
+  }
+  run.sections.forEach((s, i)=>{
+    md += `## ${i+1}. ${s.title}\n\n${s.body}\n\n`;
+  });
+  md += `---\n\n## Raw Answers\n\n`;
+  run.answers.forEach((a, i)=>{
+    md += `**${i+1}. ${a.q}**\n\n${a.a}\n\n`;
+  });
+  const blob = new Blob([md], { type:'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (run.title || 'situation').replace(/[^a-z0-9]+/gi,'-').toLowerCase() + '.md';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---------- Render ----------
+function el(html){
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  const masthead = el(`
+    <div class="masthead">
+      <h1>Casework</h1>
+      <div class="tag">Situation Handling</div>
+    </div>
+  `);
+  app.appendChild(masthead);
+
+  if(state.view === 'home') renderHome(app);
+  else if(state.view === 'interview') renderInterview(app);
+  else if(state.view === 'analyzing') renderAnalyzing(app);
+  else if(state.view === 'analysisError') renderAnalysisError(app);
+  else if(state.view === 'report') renderReport(app);
+}
+
+function renderHome(app){
+  const actions = el(`
+    <div class="home-actions">
+      <button class="btn" id="newRunBtn">New Situation</button>
+    </div>
+  `);
+  app.appendChild(actions);
+  actions.querySelector('#newRunBtn').addEventListener('click', newRun);
+
+  const label = el(`<p class="section-label">Past Situations</p>`);
+  app.appendChild(label);
+
+  if(state.runs.length === 0){
+    app.appendChild(el(`<div class="empty-state">No situations recorded yet. Start one above.</div>`));
+    return;
+  }
+
+  const list = el(`<ul class="case-list"></ul>`);
+  state.runs.forEach(run=>{
+    const item = el(`
+      <li class="case-item">
+        <div>
+          <div class="title">${escapeHtml(run.title)}</div>
+          <div class="meta">${formatDate(run.createdAt)}</div>
+        </div>
+      </li>
+    `);
+    item.addEventListener('click', ()=> viewRun(run));
+    list.appendChild(item);
+  });
+  app.appendChild(list);
+}
+
+function renderInterview(app){
+  const track = el(`<div class="progress-track"></div>`);
+  STEPS.forEach((s,i)=>{
+    const seg = document.createElement('div');
+    seg.className = 'progress-seg' + (i < state.stepIndex ? ' done' : i === state.stepIndex ? ' current' : '');
+    track.appendChild(seg);
+  });
+  app.appendChild(track);
+
+  const step = STEPS[state.stepIndex];
+  const header = el(`
+    <div>
+      <p class="step-eyebrow">Step ${state.stepIndex+1} of ${STEPS.length}</p>
+      <h2 class="step-title">${escapeHtml(step.q)}</h2>
+    </div>
+  `);
+  app.appendChild(header);
+
+  const form = el(`
+    <div>
+      <textarea id="answerBox" placeholder="Type your answer…">${escapeHtml(state.answers[state.stepIndex] || '')}</textarea>
+      <div class="interview-footer">
+        <span class="hint">${state.stepIndex === STEPS.length-1 ? 'Last step — analysis runs after this.' : 'Enter your answer, then continue.'}</span>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-ghost" id="backBtn" ${state.stepIndex === 0 ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''}>Back</button>
+          <button class="btn" id="nextBtn" disabled>${state.stepIndex === STEPS.length-1 ? 'Finish & Analyze' : 'Next'}</button>
+        </div>
+      </div>
+    </div>
+  `);
+  app.appendChild(form);
+
+  const box = form.querySelector('#answerBox');
+  const btn = form.querySelector('#nextBtn');
+  const backBtn = form.querySelector('#backBtn');
+  const sync = ()=>{ btn.disabled = box.value.trim().length === 0; };
+  box.addEventListener('input', sync);
+  sync();
+  box.focus();
+
+  btn.addEventListener('click', ()=> submitStep(box.value.trim()));
+  if(state.stepIndex > 0){
+    backBtn.addEventListener('click', ()=>{
+      state.answers[state.stepIndex] = box.value;
+      state.stepIndex -= 1;
+      render();
+    });
+  }
+}
+
+function renderAnalyzing(app){
+  app.appendChild(el(`
+    <div class="analyzing">
+      <div class="spinner"></div>
+      <p class="step-eyebrow">Working</p>
+      <h2 class="step-title" style="font-size:20px;">${escapeHtml(state.progressLabel || 'Starting…')}</h2>
+    </div>
+  `));
+}
+
+function renderAnalysisError(app){
+  app.appendChild(el(`<a class="back-link" id="backLink">&larr; Back home</a>`));
+  app.querySelector('#backLink').addEventListener('click', goHome);
+  app.appendChild(el(`
+    <div>
+      <p class="step-eyebrow">Analysis Failed</p>
+      <h2 class="step-title" style="font-size:22px;">Something went wrong generating the report.</h2>
+      <div class="error-box">${escapeHtml(state.error)}</div>
+      <div class="report-actions">
+        <button class="btn" id="retryBtn">Try Again</button>
+      </div>
+    </div>
+  `));
+  app.querySelector('#retryBtn').addEventListener('click', runAnalysis);
+}
+
+function renderReport(app){
+  const run = state.current;
+  app.appendChild(el(`<a class="back-link" id="backLink">&larr; Back to all situations</a>`));
+  app.querySelector('#backLink').addEventListener('click', goHome);
+
+  app.appendChild(el(`
+    <div class="report-head">
+      <h2 class="report-title">${escapeHtml(run.title)}</h2>
+      <div class="report-date">${formatDate(run.createdAt)}</div>
+    </div>
+  `));
+
+  if(run.synthesis){
+    const synParas = (run.synthesis.body || '').split(/\n\n+/).map(p=> `<p>${escapeHtml(p)}</p>`).join('');
+    app.appendChild(el(`
+      <div class="synthesis-block">
+        <h3>${escapeHtml(run.synthesis.title)}</h3>
+        ${synParas}
+      </div>
+    `));
+    app.appendChild(el(`<p class="section-label" style="margin-top:40px;">Based On</p>`));
+  }
+
+  run.sections.forEach((s, i)=>{
+    const paras = (s.body || '').split(/\n\n+/).map(p=> `<p>${escapeHtml(p)}</p>`).join('');
+    app.appendChild(el(`
+      <div class="report-section">
+        <h3>${i+1}. ${escapeHtml(s.title)}</h3>
+        ${paras}
+      </div>
+    `));
+  });
+
+  const actions = el(`
+    <div class="report-actions">
+      <button class="btn" id="exportBtn">Export as .md</button>
+      <button class="btn-ghost" id="newFromHere">New Situation</button>
+    </div>
+  `);
+  app.appendChild(actions);
+  actions.querySelector('#exportBtn').addEventListener('click', ()=> exportMarkdown(run));
+  actions.querySelector('#newFromHere').addEventListener('click', newRun);
+
+  const raw = el(`
+    <details class="raw-answers">
+      <summary>View raw answers</summary>
+    </details>
+  `);
+  run.answers.forEach((a,i)=>{
+    raw.appendChild(el(`
+      <div class="raw-item">
+        <div class="q">${i+1}. ${escapeHtml(a.q)}</div>
+        <div class="a">${escapeHtml(a.a)}</div>
+      </div>
+    `));
+  });
+  app.appendChild(raw);
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+
+init();
+</script>
+</body>
+</html>

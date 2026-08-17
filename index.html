@@ -409,11 +409,12 @@ function goHome(){
 
 async function submitStep(text){
   state.answers[state.stepIndex] = text;
-  saveProgress();
   if(state.stepIndex < STEPS.length - 1){
     state.stepIndex += 1;
+    saveProgress();
     render();
   } else {
+    saveProgress();
     await runAnalysis();
   }
 }
@@ -655,6 +656,13 @@ function renderInterview(app){
       render();
     });
   }
+
+  // Live autosave while typing — covers a crash/refresh before Next is
+  // ever clicked, which is the actual real-world scenario this exists for.
+  box.addEventListener('input', ()=>{
+    state.answers[state.stepIndex] = box.value;
+    saveProgress();
+  });
 }
 
 function renderAnalyzing(app){

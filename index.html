@@ -321,33 +321,68 @@ function buildAnswersBlock(){
   return STEPS.map((s,i)=> `Step ${i+1} — ${s.q}\nUser's answer: ${state.answers[i]}`).join('\n\n');
 }
 
-// ---------- Storage helpers ----------
-async function listRuns(){
+// ---------- Storage helpers (localStorage — works on any static host, no
+// server/proxy/CORS dependency, unlike the window.storage artifact API
+// which likely does not function outside claude.ai's own hosting) ----------
+const RUN_PREFIX = 'casework_run_';
+const PROGRESS_KEY = 'casework_inprogress_v1';
+
+function listRuns(){
   try{
-    const res = await window.storage.list('run:', false);
-    if(!res || !res.keys) return [];
     const runs = [];
-    for(const k of res.keys){
-      try{
-        const r = await window.storage.get(k, false);
-        if(r && r.value) runs.push(JSON.parse(r.value));
-      }catch(e){}
+    for(let i=0; i<localStorage.length; i++){
+      const key = localStorage.key(i);
+      if(key && key.indexOf(RUN_PREFIX) === 0){
+        try{
+          const val = localStorage.getItem(key);
+          if(val) runs.push(JSON.parse(val));
+        }catch(e){}
+      }
     }
     runs.sort((a,b)=> b.createdAt - a.createdAt);
     return runs;
   }catch(e){ return []; }
 }
-async function saveRun(run){
+function saveRun(run){
   try{
-    await window.storage.set('run:'+run.id, JSON.stringify(run), false);
+    localStorage.setItem(RUN_PREFIX + run.id, JSON.stringify(run));
   }catch(e){ console.error('save failed', e); }
+}
+
+// ---------- In-progress autosave / auto-resume ----------
+function saveProgress(){
+  try{
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+      answers: state.answers,
+      stepIndex: state.stepIndex,
+      savedAt: Date.now()
+    }));
+  }catch(e){ console.error('progress save failed', e); }
+}
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(!parsed || !Array.isArray(parsed.answers)) return null;
+    return parsed;
+  }catch(e){ return null; }
+}
+function clearProgress(){
+  try{ localStorage.removeItem(PROGRESS_KEY); }catch(e){}
 }
 
 // ---------- App state ----------
 let state = { view:'home', runs:[], current:null, stepIndex:0, answers:[], error:null, progressLabel:'' };
 
-async function init(){
-  state.runs = await listRuns();
+function init(){
+  state.runs = listRuns();
+  const saved = loadProgress();
+  if(saved && saved.answers.some(a => (a||'').trim().length > 0)){
+    state.view = 'interview';
+    state.answers = STEPS.map((s,i)=> saved.answers[i] || '');
+    state.stepIndex = Math.min(saved.stepIndex || 0, STEPS.length - 1);
+  }
   render();
 }
 
@@ -357,6 +392,7 @@ function newRun(){
   state.answers = STEPS.map(()=> '');
   state.current = null;
   state.error = null;
+  clearProgress();
   render();
 }
 
@@ -373,6 +409,7 @@ function goHome(){
 
 async function submitStep(text){
   state.answers[state.stepIndex] = text;
+  saveProgress();
   if(state.stepIndex < STEPS.length - 1){
     state.stepIndex += 1;
     render();
@@ -463,8 +500,9 @@ async function runAnalysis(){
       synthesis: { title:'Synthesis', body: synthesisBody },
       sections: sections
     };
-    await saveRun(run);
-    state.runs = await listRuns();
+    saveRun(run);
+    state.runs = listRuns();
+    clearProgress();
     state.current = run;
     state.view = 'report';
     render();
@@ -613,6 +651,7 @@ function renderInterview(app){
     backBtn.addEventListener('click', ()=>{
       state.answers[state.stepIndex] = box.value;
       state.stepIndex -= 1;
+      saveProgress();
       render();
     });
   }

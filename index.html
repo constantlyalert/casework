@@ -608,6 +608,13 @@ function renderHome(app){
 }
 
 function renderInterview(app){
+  const abandonLink = el(`<a class="back-link" id="abandonLink">&larr; Start over / all situations</a>`);
+  app.appendChild(abandonLink);
+  abandonLink.addEventListener('click', ()=>{
+    clearProgress();
+    goHome();
+  });
+
   const track = el(`<div class="progress-track"></div>`);
   STEPS.forEach((s,i)=>{
     const seg = document.createElement('div');
